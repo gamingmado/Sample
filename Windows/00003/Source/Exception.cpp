@@ -4,7 +4,9 @@ namespace Application
 {
 namespace
 {
+
 char s_errorMessageBuffer[256] = {};
+
 } // unnamed namespace
 
 Exception::Exception(const char* message)

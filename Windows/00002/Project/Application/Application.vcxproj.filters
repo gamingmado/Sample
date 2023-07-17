@@ -12,9 +12,15 @@
     <ClCompile Include="..\..\Source\Exception.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Source\ApplicationMain.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Source\Exception.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\ApplicationMain.h">
       <Filter>Source</Filter>
     </ClInclude>
   </ItemGroup>
