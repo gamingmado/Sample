@@ -1,7 +1,5 @@
 ﻿#include "ApplicationMain.h"
 
-#include "Exception.h"
-
 namespace Application
 {
 namespace
