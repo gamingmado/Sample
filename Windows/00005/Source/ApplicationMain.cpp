@@ -10,7 +10,7 @@ int Main(HINSTANCE hInstance, int nCmdShow)
     int returnCode = EXIT_FAILURE;
     try
     {
-        Application application(hInstance, nCmdShow);
+        Body application(hInstance, nCmdShow);
         returnCode = application.Run();
     }
     catch (const std::exception& e)

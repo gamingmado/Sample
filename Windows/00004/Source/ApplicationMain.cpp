@@ -39,7 +39,7 @@ int Main([[maybe_unused]] HINSTANCE hInstance, [[maybe_unused]] int nCmdShow)
         windowClass.lpszClassName = s_windowClassName;
         if (RegisterClassEx(&windowClass) == 0)
         {
-            // throw Application::Exception();
+            throw APPLICATION_EXCEPTION("RegisterClassEx failed.");
         }
 
         RECT rect = { 0, 0, s_windowWidth, s_windowHeight };
@@ -60,7 +60,7 @@ int Main([[maybe_unused]] HINSTANCE hInstance, [[maybe_unused]] int nCmdShow)
             nullptr);
         if (hWnd == nullptr)
         {
-            // throw Application::Exception();
+            throw APPLICATION_EXCEPTION("CreateWindowEx failed.");
         }
 
         ShowWindow(hWnd, nCmdShow);

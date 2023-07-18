@@ -3,10 +3,10 @@
 namespace Application
 {
 
-class Application
+class Body
 {
 public:
-    explicit Application(HINSTANCE hInstance, int nCmdShow);
+    explicit Body(HINSTANCE hInstance, int nCmdShow);
 
     int Run();
 };

@@ -25,7 +25,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 } // unused namespace
 
-Application::Application(HINSTANCE hInstance, int nCmdShow)
+Body::Body(HINSTANCE hInstance, int nCmdShow)
 {
     WNDCLASSEX windowClass = {};
     windowClass.cbSize = sizeof(WNDCLASSEX);
@@ -36,7 +36,7 @@ Application::Application(HINSTANCE hInstance, int nCmdShow)
     windowClass.lpszClassName = s_windowClassName;
     if (RegisterClassEx(&windowClass) == 0)
     {
-        // throw Application::Exception();
+        throw APPLICATION_EXCEPTION("RegisterClassEx failed.");
     }
 
     RECT rect = { 0, 0, s_windowWidth, s_windowHeight };
@@ -57,13 +57,13 @@ Application::Application(HINSTANCE hInstance, int nCmdShow)
         nullptr);
     if (hWnd == nullptr)
     {
-        // throw Application::Exception();
+        throw APPLICATION_EXCEPTION("CreateWindowEx failed.");
     }
 
     ShowWindow(hWnd, nCmdShow);
 }
 
-int Application::Run()
+int Body::Run()
 {
     MSG msg = {};
     while (msg.message != WM_QUIT)

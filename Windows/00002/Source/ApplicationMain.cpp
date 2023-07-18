@@ -13,7 +13,7 @@ int Main([[maybe_unused]] HINSTANCE hInstance, [[maybe_unused]] int nCmdShow)
         bool isSuccess = true;
         if (!isSuccess)
         {
-            throw Application::Exception(GM_FORMAT_ERROR(E_FAIL));
+            throw APPLICATION_HRESULT_EXCEPTION(E_FAIL);
         }
         returnCode = EXIT_SUCCESS;
     }
