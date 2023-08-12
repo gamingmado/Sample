@@ -20,7 +20,25 @@ DX12Graphics::DX12Graphics(Window& window)
 , m_fenceEvent(nullptr)
 , m_fenceValue(0)
 {
-    InitializeFactory();
+    Initialize(window);
+}
+
+void DX12Graphics::Render()
+{
+    ResetCommandAllocator();
+    ResetCommandList();
+    PopulateCommandList();
+    CloseCommand();
+    ExecuteCommand();
+    Present();
+    WaitForPreviousFrame();
+}
+
+void DX12Graphics::Initialize(Window& window)
+{
+    UINT flag = 0;
+    InitializeDebugLayout(flag);
+    InitializeFactory(flag);
     InitializeDevice();
     InitializeCommandQueue();
     InitializeSwapChain(window);
@@ -32,30 +50,22 @@ DX12Graphics::DX12Graphics(Window& window)
     InitializeFenceEvent();
 }
 
-void DX12Graphics::Render()
+void DX12Graphics::InitializeDebugLayout(UINT& flag)
 {
-    ResetCommandAllocator();
-    ResetCommandList();
-    BeginBarrier();
-    ClearRenderTargetView();
-    EndBarrier();
-    CloseCommand();
-    ExecuteCommand();
-    Present();
-    WaitForPreviousFrame();
-}
-
-void DX12Graphics::InitializeFactory()
-{
-    UINT flags = 0;
     Microsoft::WRL::ComPtr<ID3D12Debug> debugController;
-    if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
+    HRESULT result = D3D12GetDebugInterface(IID_PPV_ARGS(&debugController));
+    if (FAILED(result))
     {
-        debugController->EnableDebugLayer();
-        flags |= DXGI_CREATE_FACTORY_DEBUG;
+        throw APPLICATION_HRESULT_EXCEPTION(result);
     }
 
-    HRESULT result = CreateDXGIFactory2(flags, IID_PPV_ARGS(&m_factory));
+    debugController->EnableDebugLayer();
+    flag |= DXGI_CREATE_FACTORY_DEBUG;
+}
+
+void DX12Graphics::InitializeFactory(UINT flag)
+{
+    HRESULT result = CreateDXGIFactory2(flag, IID_PPV_ARGS(&m_factory));
     if (FAILED(result))
     {
         throw APPLICATION_HRESULT_EXCEPTION(result);
@@ -216,39 +226,19 @@ void DX12Graphics::ResetCommandList()
     }
 }
 
-void DX12Graphics::BeginBarrier()
+void DX12Graphics::PopulateCommandList()
 {
-    D3D12_RESOURCE_BARRIER resourceBarrier = {};
-    resourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    resourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    resourceBarrier.Transition.pResource = m_renderTargetViews[m_frameIndex].Get();
-    resourceBarrier.Transition.Subresource = 0;
-    resourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-    resourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    auto resourceBarrierBegin = CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargetViews[m_frameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    m_commandList->ResourceBarrier(1, &resourceBarrierBegin);
 
-    m_commandList->ResourceBarrier(1, &resourceBarrier);
-}
-
-void DX12Graphics::ClearRenderTargetView()
-{
     D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle = m_descriptorHeap->GetCPUDescriptorHandleForHeapStart();
     descriptorHandle.ptr += (m_frameIndex * m_descriptorHeapSize);
 
     const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
     m_commandList->ClearRenderTargetView(descriptorHandle, clearColor, 0, nullptr);
-}
 
-void DX12Graphics::EndBarrier()
-{
-    D3D12_RESOURCE_BARRIER resourceBarrier = {};
-    resourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    resourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    resourceBarrier.Transition.pResource = m_renderTargetViews[m_frameIndex].Get();
-    resourceBarrier.Transition.Subresource = 0;
-    resourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-    resourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-
-    m_commandList->ResourceBarrier(1, &resourceBarrier);
+    auto resourceBarrierEnd = CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargetViews[m_frameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
+    m_commandList->ResourceBarrier(1, &resourceBarrierEnd);
 }
 
 void DX12Graphics::CloseCommand()
@@ -262,8 +252,8 @@ void DX12Graphics::CloseCommand()
 
 void DX12Graphics::ExecuteCommand()
 {
-    ID3D12CommandList* commandLists[] = { m_commandList.Get() };
-    m_commandQueue->ExecuteCommandLists(1, commandLists);
+    std::array<ID3D12CommandList*, s_sizeCommandList> commandLists = { m_commandList.Get() };
+    m_commandQueue->ExecuteCommandLists(static_cast<UINT>(commandLists.size()), &commandLists[0]);
 }
 
 void DX12Graphics::Present()

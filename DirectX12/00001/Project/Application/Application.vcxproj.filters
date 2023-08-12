@@ -4,9 +4,6 @@
     <Filter Include="Source">
       <UniqueIdentifier>{9df4128e-e07e-4129-b8d6-56b31cdb467d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shader">
-      <UniqueIdentifier>{d08262c6-8888-47ff-9539-1f9a2bffeac9}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Source\Main.cpp">
@@ -50,13 +47,5 @@
     <ClInclude Include="..\..\Source\Window.h">
       <Filter>Source</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="PixelShader.hlsl">
-      <Filter>Shader</Filter>
-    </FxCompile>
-    <FxCompile Include="VertexShader.hlsl">
-      <Filter>Shader</Filter>
-    </FxCompile>
   </ItemGroup>
 </Project>

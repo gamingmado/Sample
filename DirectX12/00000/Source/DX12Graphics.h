@@ -13,7 +13,9 @@ public:
     void Render();
 
 private:
-    void InitializeFactory();
+    void Initialize(Window& window);
+    void InitializeDebugLayout(UINT& flag);
+    void InitializeFactory(UINT flag);
     void InitializeDevice();
     void InitializeCommandQueue();
     void InitializeSwapChain(Window& window);
@@ -25,9 +27,7 @@ private:
     void InitializeFenceEvent();
     void ResetCommandAllocator();
     void ResetCommandList();
-    void BeginBarrier();
-    void ClearRenderTargetView();
-    void EndBarrier();
+    void PopulateCommandList();
     void CloseCommand();
     void ExecuteCommand();
     void Present();
@@ -35,6 +35,7 @@ private:
 
 private:
     static constexpr std::size_t s_sizeRenderTargetViews = 2;
+    static constexpr std::size_t s_sizeCommandList = 1;
     Microsoft::WRL::ComPtr<IDXGIFactory4> m_factory;
     Microsoft::WRL::ComPtr<ID3D12Device> m_device;
     Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_commandQueue;

@@ -25,7 +25,25 @@ DX12Graphics::DX12Graphics(Window& window)
 , m_vertexBuffer()
 , m_vertexBufferView()
 {
-    InitializeFactory();
+    Initialize(window);
+}
+
+void DX12Graphics::Render()
+{
+    ResetCommandAllocator();
+    ResetCommandList();
+    PopulateCommandList();
+    CloseCommand();
+    ExecuteCommand();
+    Present();
+    WaitForPreviousFrame();
+}
+
+void DX12Graphics::Initialize(Window& window)
+{
+    UINT flag = 0;
+    InitializeDebugLayout(flag);
+    InitializeFactory(flag);
     InitializeDevice();
     InitializeCommandQueue();
     InitializeSwapChain(window);
@@ -40,30 +58,22 @@ DX12Graphics::DX12Graphics(Window& window)
     InitializeVertexBuffer();
 }
 
-void DX12Graphics::Render()
+void DX12Graphics::InitializeDebugLayout(UINT& flag)
 {
-    ResetCommandAllocator();
-    ResetCommandList();
-    BeginBarrier();
-    ClearRenderTargetView();
-    EndBarrier();
-    CloseCommand();
-    ExecuteCommand();
-    Present();
-    WaitForPreviousFrame();
-}
-
-void DX12Graphics::InitializeFactory()
-{
-    UINT flags = 0;
     Microsoft::WRL::ComPtr<ID3D12Debug> debugController;
-    if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
+    HRESULT result = D3D12GetDebugInterface(IID_PPV_ARGS(&debugController));
+    if (FAILED(result))
     {
-        debugController->EnableDebugLayer();
-        flags |= DXGI_CREATE_FACTORY_DEBUG;
+        throw APPLICATION_HRESULT_EXCEPTION(result);
     }
 
-    HRESULT result = CreateDXGIFactory2(flags, IID_PPV_ARGS(&m_factory));
+    debugController->EnableDebugLayer();
+    flag |= DXGI_CREATE_FACTORY_DEBUG;
+}
+
+void DX12Graphics::InitializeFactory(UINT flag)
+{
+    HRESULT result = CreateDXGIFactory2(flag, IID_PPV_ARGS(&m_factory));
     if (FAILED(result))
     {
         throw APPLICATION_HRESULT_EXCEPTION(result);
@@ -323,25 +333,15 @@ void DX12Graphics::ResetCommandList()
     }
 }
 
-void DX12Graphics::BeginBarrier()
+void DX12Graphics::PopulateCommandList()
 {
     m_commandList->SetGraphicsRootSignature(m_rootSignature.Get());
     m_commandList->RSSetViewports(1, &m_viewport);
     m_commandList->RSSetScissorRects(1, &m_scissorRect);
 
-    D3D12_RESOURCE_BARRIER resourceBarrier = {};
-    resourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    resourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    resourceBarrier.Transition.pResource = m_renderTargetViews[m_frameIndex].Get();
-    resourceBarrier.Transition.Subresource = 0;
-    resourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-    resourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+    auto resourceBarrierBegin = CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargetViews[m_frameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    m_commandList->ResourceBarrier(1, &resourceBarrierBegin);
 
-    m_commandList->ResourceBarrier(1, &resourceBarrier);
-}
-
-void DX12Graphics::ClearRenderTargetView()
-{
     CD3DX12_CPU_DESCRIPTOR_HANDLE descriptorHandle(m_descriptorHeap->GetCPUDescriptorHandleForHeapStart(), m_frameIndex, m_descriptorHeapSize);
 
     m_commandList->OMSetRenderTargets(1, &descriptorHandle, FALSE, nullptr);
@@ -352,19 +352,9 @@ void DX12Graphics::ClearRenderTargetView()
     m_commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     m_commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
     m_commandList->DrawInstanced(3, 1, 0, 0);
-}
 
-void DX12Graphics::EndBarrier()
-{
-    D3D12_RESOURCE_BARRIER resourceBarrier = {};
-    resourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    resourceBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-    resourceBarrier.Transition.pResource = m_renderTargetViews[m_frameIndex].Get();
-    resourceBarrier.Transition.Subresource = 0;
-    resourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-    resourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-
-    m_commandList->ResourceBarrier(1, &resourceBarrier);
+    auto resourceBarrierEnd = CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargetViews[m_frameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
+    m_commandList->ResourceBarrier(1, &resourceBarrierEnd);
 }
 
 void DX12Graphics::CloseCommand()
