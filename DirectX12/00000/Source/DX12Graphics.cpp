@@ -13,6 +13,7 @@ DX12Graphics::DX12Graphics(Window& window)
 , m_descriptorHeap()
 , m_renderTargetViews()
 , m_commandAllocator()
+, m_pipelineState()
 , m_commandList()
 , m_fence()
 , m_frameIndex(0)
@@ -180,7 +181,7 @@ void DX12Graphics::InitializeCommandAllocator()
 
 void DX12Graphics::InitializeCommandList()
 {
-    HRESULT result = m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_commandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_commandList));
+    HRESULT result = m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_commandAllocator.Get(), m_pipelineState.Get(), IID_PPV_ARGS(&m_commandList));
     if (FAILED(result))
     {
         throw APPLICATION_HRESULT_EXCEPTION(result);
@@ -218,8 +219,7 @@ void DX12Graphics::ResetCommandAllocator()
 
 void DX12Graphics::ResetCommandList()
 {
-    Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
-    HRESULT result = m_commandList->Reset(m_commandAllocator.Get(), pipelineState.Get());
+    HRESULT result = m_commandList->Reset(m_commandAllocator.Get(), m_pipelineState.Get());
     if (FAILED(result))
     {
         throw APPLICATION_HRESULT_EXCEPTION(result);
